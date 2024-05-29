@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Scanner</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #000000;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        #device-name-input {
+            display: none;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>QR Code Scanner -- add sensor</h1>
+        <div id="qr-reader" style="width: 100%;"></div>
+        <div class="result" id="qr-result"></div>
+        <div id="device-name-input">
+            <label for="device-name">Enter device name:</label>
+            <input type="text" id="device-name" name="device-name">
+            <button onclick="submitDeviceName()">Submit</button>
+        </div>
+    </div>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script>
+        var qrCodeMessage = null;
+        var html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250 });
+        const device_SN = "{{ device_SN }}"; // Jinja2 template syntax to inject server-side variable
+
+        function onScanSuccess(message) {
+            qrCodeMessage = message;
+            document.getElementById('qr-result').innerText = `QR Code: ${message}`;
+            html5QrcodeScanner.clear();
+            document.getElementById('device-name-input').style.display = 'block';
+        }
+
+        function submitDeviceName() {
+            var deviceName = document.getElementById('device-name').value;
+            fetch(`/devices/${device_SN}/add_sensor`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    qrCodeMessage: qrCodeMessage,
+                    sensorName: deviceName
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    document.getElementById('qr-result').innerText += ` - ${data.message}`;
+                } else {
+                    document.getElementById('qr-result').innerText += ' - Failed to send sensor data';
+                }
+            })
+            .catch(error => {
+                document.getElementById('qr-result').innerText += ` - Error: ${error}`;
+            });
+        }
+
+        html5QrcodeScanner.render(onScanSuccess);
+    </script>
+</body>
+</html>
