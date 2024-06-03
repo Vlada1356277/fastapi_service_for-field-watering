@@ -1,8 +1,4 @@
 from contextlib import asynccontextmanager
-
-import json
-from typing import TypedDict
-
 import uvicorn
 from fastapi import FastAPI
 import psycopg2
@@ -10,11 +6,10 @@ from src.backend.database import models
 from src.backend.database.database import engine, SessionLocal
 from src.backend.database.models import Device
 from src.backend.mqtt_client import connect_mqtt
-from src.backend.routers import subscribe_device, add_sensor, device_data
+from src.backend.routers import subscribe_device, add_sensor, device_data, delete_sensor, sensors, output
 from fastapi.staticfiles import StaticFiles
 
 from src.backend.routers.read_mqtt import State, on_message
-from starlette.datastructures import State
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -51,9 +46,24 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# post("/subscribe_mqtt")
 app.include_router(subscribe_device.router)
+
+# post("/devices/{device_SN}/add_sensor")
+# get("/devices/{device_SN}/add_sensor")
 app.include_router(add_sensor.router)
+
+# delete("/devices/{device_SN}/{sensor_uid}")
+app.include_router(delete_sensor.router)
+
+# get("/{device_SN}") for Django
 app.include_router(device_data.router)
+
+# get("/devices/{device_SN}")
+app.include_router(sensors.router)
+
+
+app.include_router(output.router)
 
 # отрисовка html
 app.mount("/templates", StaticFiles(directory="templates"), name="templates")
@@ -61,7 +71,7 @@ app.mount("/templates", StaticFiles(directory="templates"), name="templates")
 
 @app.get("/")
 async def read_root():
-    return {"message": "Hello World"}
+    return {"message": "FastAPI service"}
 
 
 if __name__ == "__main__":

@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 devices_data: Dict[str, dict] = {}
 devices_types: Dict[str, str] = {}
+last_messages = {}
 
 router = APIRouter()
 
@@ -22,4 +23,4 @@ async def get_device_state(device_SN: str):
         raise HTTPException(status_code=404, detail="Device not found")
     return DeviceState(
         rssi=f"{device['rssi']} dBm",
-        temperature=f"{device['temperature']} °C")
+        temperature=f"{device['temperature']}°C")

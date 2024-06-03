@@ -8,10 +8,13 @@
 import json
 
 from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
+from sqlalchemy.exc import IntegrityError
+
+from src.backend.database.database import SessionLocal
+from src.backend.database.models import WirelessSensor, Device
 from src.backend.routers.device_data import devices_types
 
 router = APIRouter()
@@ -58,6 +61,7 @@ async def add_sensor(device_SN: str, data: SensorData, request: Request):
 
         # Формирование топика для отправки сообщения
         topic = f'{device_type}/{device_SN}/add-wireless-sensor'
+        print(topic)
 
         from main import app
         client = app.state.client
@@ -67,6 +71,22 @@ async def add_sensor(device_SN: str, data: SensorData, request: Request):
         result = client.publish(topic, str(payload), qos=2)
 
         if result.rc == 0:
+            # добавление uid и name в базу данных
+            db = SessionLocal()
+            device = db.query(Device).filter(Device.serial_number == device_SN).first()
+            if not device:
+                raise HTTPException(status_code=404, detail="Устройство не найдено")
+            sensor = WirelessSensor(uid=sensor_uid, name=sensor_name, device_id=device.id)
+            try:
+                db.add(sensor)
+                db.commit()
+                db.refresh(sensor)
+            except IntegrityError as e:
+                db.rollback()
+                db.close()
+                raise HTTPException(status_code=400, detail="Устройство уже существует") from e
+            finally:
+                db.close()
             print(f"Data {sensor_uid} and {sensor_name} sent successfully on topic {topic}")
             return {"message": f"Data {sensor_uid} and {sensor_name} sent successfully on topic {topic}"}
         else:

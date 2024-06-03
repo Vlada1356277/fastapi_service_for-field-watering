@@ -69,9 +69,9 @@
             .then(response => response.json())
             .then(data => {
                 if (data.message) {
-                    document.getElementById('qr-result').innerText += ` - ${data.message}`;
+                    document.getElementById('qr-result').innerText += `\n${data.message}`;
                 } else {
-                    document.getElementById('qr-result').innerText += ' - Failed to send sensor data';
+                    document.getElementById('qr-result').innerText += '\nFailed to send sensor data';
                 }
             })
             .catch(error => {

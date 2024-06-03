@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Output</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 300px;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            text-align: left;
+        }
+        select, input[type="text"], input[type="time"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/timepicker.js/latest/timepicker.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/timepicker.js/latest/timepicker.min.css" rel="stylesheet"/>
+</head>
+<body>
+    <div class="container">
+        <h1>Add Output</h1>
+        <form action="/devices/{{ device_SN }}/output" method="post">
+            <label for="output_id">Output ID:</label>
+            <select name="output_id" id="output_id" required>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+            </select><br>
+
+            <label for="name">Name:</label>
+            <input type="text" name="name" id="name" required><br>
+
+            <label for="sensor_uid">Wireless Sensor:</label>
+            <select name="sensor_uid" id="sensor_uid" required>
+                {% for sensor in sensors %}
+                    <option value="{{ sensor.uid }}">{{ sensor.name }}</option>
+                {% endfor %}
+            </select><br>
+
+            <label for="start_ts">Start Time:</label>
+            <input type="text" name="start_ts" id="start_ts" placeholder="Time" required><br>
+
+            <label for="end_ts">End Time:</label>
+            <input type="text" name="end_ts" id="end_ts" placeholder="Time" required><br>
+
+            <button type="submit">Save</button>
+        </form>
+    </div>
+    <script>
+
+
+         var timepicker = new TimePicker(['start_ts', 'end_ts'], {
+        theme: 'dark', // or 'blue-grey'
+        lang: 'en' // 'en', 'pt' for now
+    });
+    timepicker.on('change', function (evt) {
+        console.info(evt);
+
+        var value = (evt.hour || '00') + ':' + (evt.minute || '00');
+        evt.element.value = value;
+    });
+
+    </script>
+</body>
+</html>
