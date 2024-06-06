@@ -1,11 +1,10 @@
-from fastapi import FastAPI, HTTPException, APIRouter
-from pydantic import BaseModel
+from fastapi import HTTPException, APIRouter
 
 from src.backend.mqtt_client import subscribe_mqtt
 from src.backend.database import schemas
 from src.backend.database.database import SessionLocal
 from src.backend.database.models import Device
-from src.backend.routers.read_mqtt import State, on_message
+from src.backend.routers.read_mqtt import on_message
 from sqlalchemy.exc import IntegrityError
 
 router = APIRouter()
@@ -32,11 +31,6 @@ async def subscribe(data: schemas.DeviceData):
         raise HTTPException(status_code=400, detail="Устройство уже существует") from e
     finally:
         db.close()
-
-    # db.add(device)
-    # db.commit()
-    # db.refresh(device)
-    # db.close()
 
     # Подписка на MQTT topic с использованием полученных данных
     await subscribe_mqtt(topic)

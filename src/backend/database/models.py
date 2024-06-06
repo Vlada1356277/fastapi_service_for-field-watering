@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, ForeignKey, Boolean, CheckConstraint
+from sqlalchemy import Column, String, Integer, ForeignKey, Boolean, CheckConstraint, JSON, DateTime
 from sqlalchemy.orm import relationship
 
 from .database import Base
@@ -9,6 +9,7 @@ class Device(Base):
 
     id = Column(Integer, primary_key=True)
     serial_number = Column(String, unique=True)
+    device_type = Column(String, nullable=True)
     name = Column(String, nullable=True)
 
     # Связь один ко многим с WirelessSensor
@@ -65,3 +66,11 @@ class Output(Base):
 
     # Обратная связь с WirelessSensor
     wireless_sensor = relationship("WirelessSensor", back_populates="output")
+
+
+class LastReadings(Base):
+    __tablename__ = 'last_readings'
+
+    id = Column(Integer, primary_key=True)
+    device_id = Column(Integer, ForeignKey('devices.id', ondelete="CASCADE"), nullable=False)
+    data = Column(JSON)

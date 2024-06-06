@@ -1,23 +1,19 @@
 # TOPIC: <device_type>/<master_uuid>/updated
 import json
 import time
-from datetime import datetime, timedelta
-from fastapi import APIRouter, Request, HTTPException, Depends
-from sqlalchemy.orm import Session
+from datetime import datetime
 
-from src.backend.database.database import SessionLocal
-from src.backend.database.models import Device, WirelessSensor, SensorReading, Output
-from src.backend.database.schemas import SensorsList, AddOutputRequest
-from src.backend.routers.device_data import last_messages, devices_types
 from fastapi import APIRouter, Request, HTTPException, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.exc import IntegrityError
+
+from src.backend.database.database import SessionLocal
+from src.backend.database.models import Device, WirelessSensor, Output, LastReadings
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
-
+# добавление и изменение выхода
 @router.get("/devices/{device_SN}/output", response_class=HTMLResponse)
 async def get_add_output_form(request: Request, device_SN: str):
     db = SessionLocal()
@@ -48,11 +44,17 @@ async def add_change_output(
         output_id: int = Form(...), name: str = Form(...),
         start_ts: str = Form(...), end_ts: str = Form(...),
 ):
+    db = SessionLocal()
     try:
-        if device_SN not in last_messages:
+        device = db.query(Device).filter(Device.serial_number == device_SN).first()
+        if not device:
+            raise HTTPException(status_code=404, detail="Device not found")
+
+        last_reading = db.query(LastReadings).filter(LastReadings.device_id == device.id).first()
+        if not last_reading or 'outputs' not in last_reading.data:
             raise HTTPException(status_code=404, detail="Device data not found")
 
-        last_message = last_messages[device_SN]
+        last_message = last_reading.data
 
         start_ts_unix = parse_time_to_unix(start_ts)
         end_ts_unix = parse_time_to_unix(end_ts)
@@ -73,7 +75,7 @@ async def add_change_output(
         updated_state['outputs'].append(output)
         payload = json.dumps(updated_state, ensure_ascii=False)
 
-        device_type = devices_types.get(device_SN)
+        device_type = device.device_type
 
         # Формирование топика для отправки сообщения
         topic = f'{device_type}/{device_SN}/updated'
@@ -88,7 +90,7 @@ async def add_change_output(
         if result.rc != 0:
             raise HTTPException(status_code=500, detail="Failed to send MQTT message")
 
-        db = SessionLocal()
+        # сохранение или обновление в БД
         try:
             existing_output = db.query(Output).filter(
                 Output.id == output_id,
@@ -96,14 +98,14 @@ async def add_change_output(
             ).first()
 
             if existing_output:
-                # Update the existing output
+                # обновление существующего
                 existing_output.name = name
                 existing_output.value = False
                 existing_output.startTime = start_ts_unix
                 existing_output.endTime = end_ts_unix
                 existing_output.lastTime = int(time.time())
             else:
-                # Create a new output
+                # добавление нового выхода
                 new_output = Output(
                     name=name,
                     id=output_id,

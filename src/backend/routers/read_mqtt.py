@@ -2,11 +2,14 @@
 
 import json
 from typing import TypedDict, Dict
+from fastapi import HTTPException
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 from src.backend.database.database import SessionLocal
-from src.backend.database.models import SensorReading
+from src.backend.database.models import SensorReading, Device, LastReadings
 from src.backend.database.schemas import State
-from src.backend.routers.device_data import devices_data, devices_types, last_messages
+# from src.backend.routers.device_data import devices_types
 from src.backend.database.models import WirelessSensor
 
 
@@ -41,40 +44,36 @@ class WirelessSensors(TypedDict):
     humidity: int
 
 
-# class State(TypedDict):
-#     rssi: int
-#     temperature: int
-#     sensors: list[Sensors]
-#     outputs: list[Output]
-#     wirelessSensors: list[WirelessSensors]
-
-
 def on_message(client, userdata, msg):
-    # parse a valid JSON string and convert it into a Python Dictionary
+    db = SessionLocal()
     try:
         state: State = json.loads(msg.payload)
         print('-->', state)
 
-        # данные главного устр-ва для отображения
+        # достаем device_SN из топика сообщения
         device_SN = extract_device_id_from_topic(msg.topic)
-        devices_data[device_SN] = {
-            "rssi": state['rssi'],
-            "temperature": state['temperature']
-        }
-        print(f'Updated device {device_SN} data:', devices_data[device_SN])
 
-        if device_SN not in devices_types:
-            device_type = msg.topic.split('/')[0]
-            devices_types[device_SN] = device_type
-        print("Типы устройств для подписки: ", devices_types)
+        # сохранение или обноваление device_type изнужного топика
+        device_type = msg.topic.split('/')[0]
+        device = db.query(Device).filter(Device.serial_number == device_SN).first()
+        if device:
+            if device.device_type != device_type:
+                device.device_type = device_type
+                db.commit()
+        else:
+            raise HTTPException(status_code=404, detail="device isn't found in DB")
 
         # обработка данных датчика
         process_sensor_data(state['wirelessSensors'])
 
-        last_messages[device_SN] = state
+        # сохранение последних сообщений в БД
+        store_last_readings(db, device_SN, state)
 
     except (json.JSONDecodeError, ValueError) as e:
         print(f"Error processing message: {e}")
+        db.rollback()
+    finally:
+        db.close()
 
 
 def extract_device_id_from_topic(topic: str) -> str:
@@ -115,3 +114,32 @@ def process_sensor_data(wireless_sensors):
         print(f"Error processing sensor data: {e}")
     finally:
         db.close()
+
+
+def store_last_readings(db: Session, device_SN: str, state: State):
+    try:
+        # Find the corresponding device in the database
+        device = db.query(Device).filter(Device.serial_number == device_SN).first()
+        if not device:
+            print(f"Device {device_SN} not found in the database.")
+            return
+
+        # check if a record already exists for this device
+        last_reading = db.query(LastReadings).filter(LastReadings.device_id == device.id).first()
+
+        if last_reading:
+            # обновление данных
+            last_reading.data = state
+        else:
+            new_reading = LastReadings(device_id=device.id, data=state)
+            db.add(new_reading)
+
+        # Commit the transaction
+        db.commit()
+
+    except SQLAlchemyError as e:
+        print(f"Database error: {e}")
+        db.rollback()  # Rollback in case of error
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        db.rollback()  # Rollback in case of error

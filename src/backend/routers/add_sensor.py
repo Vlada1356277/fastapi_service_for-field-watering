@@ -15,16 +15,11 @@ from sqlalchemy.exc import IntegrityError
 
 from src.backend.database.database import SessionLocal
 from src.backend.database.models import WirelessSensor, Device
-from src.backend.routers.device_data import devices_types
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
-#
-# @router.get("/devices/{device_SN}/add_sensor", response_class=HTMLResponse)
-# async def serve_html(device_SN: str):
-#     with open("templates/qr.html", "r") as file:
-#         return HTMLResponse(content=file.read())
+
 @router.get("/devices/{device_SN}/add_sensor", response_class=HTMLResponse)
 async def serve_html(request: Request, device_SN: str):
     return templates.TemplateResponse("qr.html", {"request": request, "device_SN": device_SN})
@@ -37,6 +32,7 @@ class SensorData(BaseModel):
 
 @router.post("/devices/{device_SN}/add_sensor")
 async def add_sensor(device_SN: str, data: SensorData, request: Request):
+    db = SessionLocal()
     try:
         sensor_uid = data.qrCodeMessage
         sensor_name = data.sensorName
@@ -54,10 +50,13 @@ async def add_sensor(device_SN: str, data: SensorData, request: Request):
         # Преобразование данных в JSON
         payload = json.dumps(sensor_data)
 
-        device_type = devices_types.get(device_SN)
-        if device_type is None:
-            print("Тип устройства не определен, дождитесь сообщения от устройства")
-            raise HTTPException(status_code=500, detail="Тип устройства не определен, дождитесь сообщения от устройства")
+        # извлечение типа устройства для топика
+        device = db.query(Device).filter(Device.serial_number == device_SN).first()
+        if not device:
+            raise HTTPException(status_code=404, detail="Устройство не найдено")
+        device_type = device.device_type
+        if not device_type:
+            raise HTTPException(status_code=404, detail="Тип устройства не найден")
 
         # Формирование топика для отправки сообщения
         topic = f'{device_type}/{device_SN}/add-wireless-sensor'
@@ -71,11 +70,7 @@ async def add_sensor(device_SN: str, data: SensorData, request: Request):
         result = client.publish(topic, str(payload), qos=2)
 
         if result.rc == 0:
-            # добавление uid и name в базу данных
-            db = SessionLocal()
-            device = db.query(Device).filter(Device.serial_number == device_SN).first()
-            if not device:
-                raise HTTPException(status_code=404, detail="Устройство не найдено")
+            # добавление данных сенсора в БД
             sensor = WirelessSensor(uid=sensor_uid, name=sensor_name, device_id=device.id)
             try:
                 db.add(sensor)
@@ -88,7 +83,7 @@ async def add_sensor(device_SN: str, data: SensorData, request: Request):
             finally:
                 db.close()
             print(f"Data {sensor_uid} and {sensor_name} sent successfully on topic {topic}")
-            return {"message": f"Data {sensor_uid} and {sensor_name} sent successfully on topic {topic}"}
+            return {"message": f"Data {sensor_uid} {sensor_name} sent successfully on topic {topic}"}
         else:
             raise HTTPException(status_code=500, detail="Failed to send sensor data")
 

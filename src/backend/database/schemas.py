@@ -18,6 +18,7 @@ class State(BaseModel):
     sensors: List[Dict]
     outputs: List[Dict]
     wirelessSensors: List[WirelessSensor]
+    humidity: Optional[int]
 
 
 class DeviceData(BaseModel):
