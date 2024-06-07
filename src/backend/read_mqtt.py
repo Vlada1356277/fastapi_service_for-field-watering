@@ -1,5 +1,4 @@
 # чтение, сохранение в бд. Работа с json
-
 import json
 # from typing import TypedDict, Dict
 from fastapi import HTTPException
