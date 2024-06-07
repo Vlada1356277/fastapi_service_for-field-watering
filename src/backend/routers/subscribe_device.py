@@ -4,7 +4,6 @@ from src.backend.mqtt_client import subscribe_mqtt
 from src.backend.database import schemas
 from src.backend.database.database import SessionLocal
 from src.backend.database.models import Device
-from src.backend.routers.read_mqtt import on_message
 from sqlalchemy.exc import IntegrityError
 
 router = APIRouter()

@@ -2,7 +2,7 @@ from datetime import datetime
 from fastapi import APIRouter, Request, HTTPException
 
 from src.backend.database.database import SessionLocal
-from src.backend.database.models import Device, WirelessSensor, SensorReading, LastReadings
+from src.backend.database.models import Device, LastReadings
 from fastapi.templating import Jinja2Templates
 
 router = APIRouter()

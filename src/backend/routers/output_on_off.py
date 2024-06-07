@@ -1,14 +1,12 @@
 import json
 import time
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from src.backend.database import Device, LastReadings
 from src.backend.database.database import SessionLocal
 from src.backend.mqtt_client import fast_mqtt
-
-# from src.backend.routers.device_data import devices_types
 
 router = APIRouter()
 

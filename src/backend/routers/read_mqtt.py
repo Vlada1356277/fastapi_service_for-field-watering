@@ -1,7 +1,7 @@
 # чтение, сохранение в бд. Работа с json
 
 import json
-from typing import TypedDict, Dict
+# from typing import TypedDict, Dict
 from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -9,40 +9,8 @@ from sqlalchemy.orm import Session
 from src.backend.database.database import SessionLocal
 from src.backend.database.models import SensorReading, Device, LastReadings
 from src.backend.database.schemas import State
-# from src.backend.routers.device_data import devices_types
 from src.backend.database.models import WirelessSensor
 from src.backend.mqtt_client import fast_mqtt
-
-
-# типизация структуры из mqtt
-class Sensors(TypedDict):
-    type: str
-    uuid: str
-    value: int
-    lastTs: int
-
-
-class Schedule:
-    startTs: int
-    endTs: int
-
-
-class Output(TypedDict):
-    name: str
-    value: bool
-    lastTs: int
-    id: int
-    uuidWirelessSensor: str
-    schedule: dict
-
-
-class WirelessSensors(TypedDict):
-    rssi: int
-    name: str
-    lastTs: int
-    uid: str
-    batteryLevel: int
-    humidity: int
 
 
 @fast_mqtt.on_message()
@@ -76,38 +44,6 @@ async def on_message(client, topic, payload, qos, properties):
         db.rollback()
     finally:
         db.close()
-
-
-# def on_message(client, userdata, msg):
-#     db = SessionLocal()
-#     try:
-#         state: State = json.loads(msg.payload)
-#         print('-->', state)
-#
-#         # достаем device_SN из топика сообщения
-#         device_SN = extract_device_id_from_topic(msg.topic)
-#
-#         # сохранение или обноваление device_type изнужного топика
-#         device_type = msg.topic.split('/')[0]
-#         device = db.query(Device).filter(Device.serial_number == device_SN).first()
-#         if device:
-#             if device.device_type != device_type:
-#                 device.device_type = device_type
-#                 db.commit()
-#         else:
-#             raise HTTPException(status_code=404, detail="device isn't found in DB")
-#
-#         # обработка данных датчика
-#         process_sensor_data(state['wirelessSensors'])
-#
-#         # сохранение последних сообщений в БД
-#         store_last_readings(db, device_SN, state)
-#
-#     except (json.JSONDecodeError, ValueError) as e:
-#         print(f"Error processing message: {e}")
-#         db.rollback()
-#     finally:
-#         db.close()
 
 
 def extract_device_id_from_topic(topic: str) -> str:

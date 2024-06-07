@@ -4,16 +4,9 @@ from pydantic import BaseModel
 
 from src.backend.database import Device, LastReadings
 from src.backend.database.database import SessionLocal
-
-# можно и в бд сохранять
-# devices_types: Dict[str, str] = {}
+from src.backend.database.schemas import DeviceState
 
 router = APIRouter()
-
-
-class DeviceState(BaseModel):
-    rssi: str
-    temperature: str
 
 
 # последняя информация об устройстве (rssi, temperature)

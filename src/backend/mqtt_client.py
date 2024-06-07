@@ -1,13 +1,9 @@
 import os
-# import paho.mqtt.client as mqtt
 from dotenv import load_dotenv, find_dotenv
 
 from fastapi_mqtt import FastMQTT, MQTTConfig
 
 load_dotenv(find_dotenv())
-
-# Глобальная переменная для mqtt клиента
-# mqtt_client: None | mqtt.Client
 
 broker = os.getenv('BROKER')
 port = int(os.getenv('PORT', 1883))

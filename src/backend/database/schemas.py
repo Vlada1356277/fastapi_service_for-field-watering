@@ -12,6 +12,7 @@ class WirelessSensor(BaseModel):
     humidity: int
 
 
+# read_mqtt.py
 class State(BaseModel):
     rssi: int
     temperature: int
@@ -21,19 +22,15 @@ class State(BaseModel):
     humidity: Optional[int]
 
 
+# subscribe_device.py
 class DeviceData(BaseModel):
     serial_number: str
     name: str
 
 
-class AddOutputRequest(BaseModel):
-    startTs: int
-    endTs: int
-
-
-class WirelessSensorBase(BaseModel):
-    name: str
-    device_id: int
+class DeviceState(BaseModel):
+    rssi: str
+    temperature: str
 
 
 class SensorsList(BaseModel):
@@ -47,32 +44,3 @@ class SensorsList(BaseModel):
     class Config:
         orm_mode = True
 
-
-class WirelessSensorCreate(WirelessSensorBase):
-    pass
-
-
-class WirelessSensor(WirelessSensorBase):
-    uid: int
-
-    class Config:
-        orm_mode = True
-
-
-class OutputBase(BaseModel):
-    wireless_sensor_uid: int
-    value: bool
-    startTime: int
-    endTime: int
-    lastTime: int
-
-
-class OutputCreate(OutputBase):
-    pass
-
-
-class Output(OutputBase):
-    id: int
-
-    class Config:
-        orm_mode = True
