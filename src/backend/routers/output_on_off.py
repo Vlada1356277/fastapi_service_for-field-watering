@@ -6,6 +6,8 @@ from pydantic import BaseModel
 
 from src.backend.database import Device, LastReadings
 from src.backend.database.database import SessionLocal
+from src.backend.mqtt_client import fast_mqtt
+
 # from src.backend.routers.device_data import devices_types
 
 router = APIRouter()
@@ -17,7 +19,7 @@ class OutputTurn(BaseModel):
 
 # принудительное включение-выключеие выхода
 @router.get("/devices/{device_SN}/{sensor_uid}/{value}")
-def update_device_output(device_SN: str, sensor_uid: str, value: bool):
+async def update_device_output(device_SN: str, sensor_uid: str, value: bool):
     db = SessionLocal()
     try:
         device = db.query(Device).filter(Device.serial_number == device_SN).first()
@@ -45,13 +47,10 @@ def update_device_output(device_SN: str, sensor_uid: str, value: bool):
 
         topic = f'{device_type}/{device_SN}/updated'
 
-        from main import app
-        client = app.state.client
-        if not client:
-            raise HTTPException(status_code=500, detail="MQTT client is not available")
-        result = client.publish(topic, payload, qos=2)
-        if result.rc != 0:
-            raise HTTPException(status_code=500, detail="Failed to send MQTT message")
+        try:
+            fast_mqtt.publish(topic, payload, qos=2)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
         if value:
             return {"message": "Полив будет принудительно запущен"}

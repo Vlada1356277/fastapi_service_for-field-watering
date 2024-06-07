@@ -15,6 +15,7 @@ from sqlalchemy.exc import IntegrityError
 
 from src.backend.database.database import SessionLocal
 from src.backend.database.models import WirelessSensor, Device
+from src.backend.mqtt_client import fast_mqtt
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -62,30 +63,26 @@ async def add_sensor(device_SN: str, data: SensorData, request: Request):
         topic = f'{device_type}/{device_SN}/add-wireless-sensor'
         print(topic)
 
-        from main import app
-        client = app.state.client
-        if not client:
-            raise HTTPException(status_code=500, detail="MQTT client is not available")
+        # отправление на mqtt
+        try:
+            fast_mqtt.publish(topic, payload, qos=2)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
-        result = client.publish(topic, str(payload), qos=2)
-
-        if result.rc == 0:
-            # добавление данных сенсора в БД
-            sensor = WirelessSensor(uid=sensor_uid, name=sensor_name, device_id=device.id)
-            try:
-                db.add(sensor)
-                db.commit()
-                db.refresh(sensor)
-            except IntegrityError as e:
-                db.rollback()
-                db.close()
-                raise HTTPException(status_code=400, detail="Устройство уже существует") from e
-            finally:
-                db.close()
-            print(f"Data {sensor_uid} and {sensor_name} sent successfully on topic {topic}")
-            return {"message": f"Data {sensor_uid} {sensor_name} sent successfully on topic {topic}"}
-        else:
-            raise HTTPException(status_code=500, detail="Failed to send sensor data")
+        # добавление данных сенсора в БД
+        sensor = WirelessSensor(uid=sensor_uid, name=sensor_name, device_id=device.id)
+        try:
+            db.add(sensor)
+            db.commit()
+            db.refresh(sensor)
+        except IntegrityError as e:
+            db.rollback()
+            db.close()
+            raise HTTPException(status_code=400, detail="Устройство уже существует") from e
+        finally:
+            db.close()
+        print(f"Data {sensor_uid} and {sensor_name} sent successfully on topic {topic}")
+        return {"message": f"Data {sensor_uid} {sensor_name} sent successfully on topic {topic}"}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

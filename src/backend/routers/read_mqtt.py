@@ -11,6 +11,7 @@ from src.backend.database.models import SensorReading, Device, LastReadings
 from src.backend.database.schemas import State
 # from src.backend.routers.device_data import devices_types
 from src.backend.database.models import WirelessSensor
+from src.backend.mqtt_client import fast_mqtt
 
 
 # типизация структуры из mqtt
@@ -44,17 +45,18 @@ class WirelessSensors(TypedDict):
     humidity: int
 
 
-def on_message(client, userdata, msg):
+@fast_mqtt.on_message()
+async def on_message(client, topic, payload, qos, properties):
     db = SessionLocal()
     try:
-        state: State = json.loads(msg.payload)
+        state = json.loads(payload)
         print('-->', state)
 
         # достаем device_SN из топика сообщения
-        device_SN = extract_device_id_from_topic(msg.topic)
+        device_SN = extract_device_id_from_topic(topic)
 
-        # сохранение или обноваление device_type изнужного топика
-        device_type = msg.topic.split('/')[0]
+        # сохранение или обновление device_type из нужного топика
+        device_type = topic.split('/')[0]
         device = db.query(Device).filter(Device.serial_number == device_SN).first()
         if device:
             if device.device_type != device_type:
@@ -74,6 +76,38 @@ def on_message(client, userdata, msg):
         db.rollback()
     finally:
         db.close()
+
+
+# def on_message(client, userdata, msg):
+#     db = SessionLocal()
+#     try:
+#         state: State = json.loads(msg.payload)
+#         print('-->', state)
+#
+#         # достаем device_SN из топика сообщения
+#         device_SN = extract_device_id_from_topic(msg.topic)
+#
+#         # сохранение или обноваление device_type изнужного топика
+#         device_type = msg.topic.split('/')[0]
+#         device = db.query(Device).filter(Device.serial_number == device_SN).first()
+#         if device:
+#             if device.device_type != device_type:
+#                 device.device_type = device_type
+#                 db.commit()
+#         else:
+#             raise HTTPException(status_code=404, detail="device isn't found in DB")
+#
+#         # обработка данных датчика
+#         process_sensor_data(state['wirelessSensors'])
+#
+#         # сохранение последних сообщений в БД
+#         store_last_readings(db, device_SN, state)
+#
+#     except (json.JSONDecodeError, ValueError) as e:
+#         print(f"Error processing message: {e}")
+#         db.rollback()
+#     finally:
+#         db.close()
 
 
 def extract_device_id_from_topic(topic: str) -> str:

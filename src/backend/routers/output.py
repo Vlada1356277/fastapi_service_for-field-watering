@@ -9,6 +9,7 @@ from fastapi.templating import Jinja2Templates
 
 from src.backend.database.database import SessionLocal
 from src.backend.database.models import Device, WirelessSensor, Output, LastReadings
+from src.backend.mqtt_client import fast_mqtt
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -32,11 +33,6 @@ async def get_add_output_form(request: Request, device_SN: str):
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         db.close()
-
-
-# async def get_output_form(request: Request, device_SN: str):
-#     return templates.TemplateResponse("output.html", {"request": request, "device_SN": device_SN})
-
 
 @router.post("/devices/{device_SN}/output")
 async def add_change_output(
@@ -71,24 +67,37 @@ async def add_change_output(
             }
         }
 
-        updated_state = last_message.copy()
-        updated_state['outputs'].append(output)
-        payload = json.dumps(updated_state, ensure_ascii=False)
+        updated_outputs = []  # Новый список для обновленных outputs
+
+        # Проверяем наличие output с таким же output_id
+        found = False
+        for existing_output in last_message.get('outputs', []):
+            if existing_output['id'] == output_id:
+                updated_outputs.append(output)  # Заменяем существующий output на новый
+                found = True
+            else:
+                updated_outputs.append(existing_output)
+
+        # Если output с таким output_id не был найден, добавляем новый output в список
+        if not found:
+            updated_outputs.append(output)
+
+        # Обновляем данные с новым списком outputs
+        last_message['outputs'] = updated_outputs
+
+        # updated_state = last_message.copy()
+        # updated_state['outputs'].append(output)
+        payload = json.dumps(last_message, ensure_ascii=False)
 
         device_type = device.device_type
 
         # Формирование топика для отправки сообщения
         topic = f'{device_type}/{device_SN}/updated'
 
-        from main import app
-
-        client = app.state.client
-        if not client:
-            raise HTTPException(status_code=500, detail="MQTT client is not available")
-
-        result = client.publish(topic, payload, qos=2)
-        if result.rc != 0:
-            raise HTTPException(status_code=500, detail="Failed to send MQTT message")
+        try:
+            fast_mqtt.publish(topic, payload, qos=2)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
         # сохранение или обновление в БД
         try:

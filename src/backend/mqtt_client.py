@@ -1,45 +1,49 @@
 import os
-import paho.mqtt.client as mqtt
+# import paho.mqtt.client as mqtt
 from dotenv import load_dotenv, find_dotenv
+
+from fastapi_mqtt import FastMQTT, MQTTConfig
 
 load_dotenv(find_dotenv())
 
 # Глобальная переменная для mqtt клиента
-mqtt_client: None | mqtt.Client
+# mqtt_client: None | mqtt.Client
 
-# mqtt_broker_address = "test.mosquitto.org"
-# port = 1883
 broker = os.getenv('BROKER')
-username = os.getenv('USERNAME')
-password = os.getenv('PASSWORD')
 port = int(os.getenv('PORT', 1883))
 
+if broker != 'test.mosquitto.org':
+    username = os.getenv('USERNAME')
+    password = os.getenv('PASSWORD')
+else:
+    username = None
+    password = None
 
-def connect_mqtt():
-    global mqtt_client
-    mqtt_client = mqtt.Client()
-    print(broker)
+mqtt_config = MQTTConfig(
+    host=broker,
+    port=port,
+    username=username,
+    password=password
+)
+fast_mqtt = FastMQTT(config=mqtt_config)
 
-    def on_connect(client, userdata, flags, rc):
-        if rc == 0:
-            print("Connected to MQTT Broker!")
-            return {"message": "Connected to MQTT Broker!" + f"{broker}"}
-        else:
-            print(f"Failed to connect, return code {rc}\n")
 
-    # callback
-    mqtt_client.on_connect = on_connect
-    if not broker == 'test.mosquitto.org':
-        mqtt_client.username_pw_set(username, password)
-    mqtt_client.connect(broker, port)
-    return mqtt_client
+@fast_mqtt.on_connect()
+def on_connect(client, flags, rc, properties):
+    if rc == 0:
+        print(f"Connected to MQTT Broker: {broker}")
+    else:
+        print(f"Failed to connect to MQTT Broker: {broker}, return code {rc}\n")
+
+
+@fast_mqtt.on_disconnect()
+def on_disconnect(client, packet, exc=None):
+    print("Disconnected")
 
 
 async def subscribe_mqtt(topic):
-    global mqtt_client
-    if mqtt_client is not None:
-        print(mqtt_client)
-        mqtt_client.subscribe(topic)
-        return {"message": "Subscribed to topic " + f'{topic}'}
-    else:
-        raise RuntimeError("MQTT client is not connected")
+    fast_mqtt.client.subscribe(topic)
+
+
+async def disconnect_mqtt():
+    await fast_mqtt.mqtt_shutdown()

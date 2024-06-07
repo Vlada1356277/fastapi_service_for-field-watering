@@ -37,9 +37,4 @@ async def subscribe(data: schemas.DeviceData):
 
     print("subscribed to MQTT topic " + f"{topic}")
 
-    # предотвращает циркулярный импорт
-    from main import app
-    client = app.state.client
-    client.on_message = on_message
-
     return {"message": "Subscribed to MQTT topic" + f"{topic}"}

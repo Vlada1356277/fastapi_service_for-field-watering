@@ -1,48 +1,39 @@
 from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
+from sqlalchemy.orm import Session
+
 from src.backend.database import models
 from src.backend.database.database import engine, SessionLocal
 from src.backend.database.models import Device
-from src.backend.mqtt_client import connect_mqtt
+from src.backend.mqtt_client import fast_mqtt, subscribe_mqtt
 from src.backend.routers import (subscribe_device, add_sensor, device_data, delete_sensor, device_detail,
                                  output, output_on_off)
 from fastapi.staticfiles import StaticFiles
-
-from src.backend.routers.read_mqtt import State, on_message
 
 models.Base.metadata.create_all(bind=engine)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    client = connect_mqtt()
-    client.on_message = on_message
-    # starts the background network thread
-    client.loop_start()
+    await fast_mqtt.mqtt_startup()
 
-    # подписка на все топики из бд
-    # subscribe([("my/topic", 0), ("another/topic", 2)])
-    db = SessionLocal()
+    # Подписка на все топики из базы данных
+    db: Session = SessionLocal()
     devices = db.query(Device).all()
     db.close()
 
-    topics: list[tuple[str, int]] = []
-    for device in devices:
-        topics.append((f"+/{device.serial_number}", 2,))
+    topics = [f"+/{device.serial_number}" for device in devices]
 
-    if topics:
-        client.subscribe(topics)
-    app.state.client = client
+    for topic in topics:
+        await subscribe_mqtt(topic)
 
-    print("subscribed to MQTT topic " + f"{topics}")
+    print("subscribed to MQTT topics", topics)
 
     yield
 
-    client.loop_stop()
-    client.disconnect()
+    await fast_mqtt.mqtt_shutdown()
     print("disconnected")
-
 
 app = FastAPI(lifespan=lifespan)
 
