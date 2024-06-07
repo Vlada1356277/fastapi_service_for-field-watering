@@ -33,7 +33,6 @@ async def lifespan(app: FastAPI):
     yield
 
     await fast_mqtt.mqtt_shutdown()
-    print("disconnected")
 
 app = FastAPI(lifespan=lifespan)
 

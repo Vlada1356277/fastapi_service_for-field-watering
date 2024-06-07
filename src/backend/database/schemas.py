@@ -12,7 +12,7 @@ class WirelessSensor(BaseModel):
     humidity: int
 
 
-# read_mqtt.py
+# mqtt_client.py
 class State(BaseModel):
     rssi: int
     temperature: int
