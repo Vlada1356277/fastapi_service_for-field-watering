@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sensor Details</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background-color: #f8f8f8;
+        }
+        .container {
+            max-width: 800px;
+            width: 100%;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .button-details {
+            background-color: #008CBA;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .button-link {
+            background-color: #4CAF50;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+        }
+        .button-danger {
+            background-color: #f44336;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+        }
+        .button-small {
+            padding: 5px 10px;
+            margin-top: 5px;
+        }
+    </style>
+    <script>
+        function redirectToSensor(deviceSN, sensorID) {
+            window.location.href = `/devices/${deviceSN}/${sensorID}`;
+        }
+
+        function deleteSensor(deviceSN, sensorID) {
+            if (confirm("Вы уверены, что хотите удалить этот датчик?")) {
+                window.location.href = `/devices/${deviceSN}/${sensorID}/delete`;
+            }
+        }
+
+        function changeOutput(deviceSN) {
+            window.location.href = `/devices/${deviceSN}/output`;
+        }
+
+        function controlIrrigation(deviceSN, sensorID, state) {
+            window.location.href = `/devices/${deviceSN}/${sensorID}/${state}`;
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h2>Информация о датчике</h2>
+        <table>
+            <tr>
+                <th>UID</th>
+                <td>{{ sensor_info.uid }}</td>
+            </tr>
+            <tr>
+                <th>Имя датчика</th>
+                <td>{{ sensor_info.name }}</td>
+            </tr>
+            <tr>
+                <th>RSSI</th>
+                <td>{{ sensor_info.last_rssi }}</td>
+            </tr>
+            <tr>
+                <th>Влажность почвы</th>
+                <td>{{ sensor_info.last_humidity }}</td>
+            </tr>
+            <tr>
+                <th>Заряд батареи</th>
+                <td>{{ sensor_info.last_battery_level }}</td>
+            </tr>
+            <tr>
+                <th>Последнее событие</th>
+                <td>{{ sensor_info.last_ts }}</td>
+            </tr>
+        </table>
+
+        {% if output_info %}
+            <h2>Выход</h2>
+            <table>
+                <tr>
+                    <th>ID</th>
+                    <td>{{ output_info.id }}</td>
+                </tr>
+                <tr>
+                    <th>Имя</th>
+                    <td>{{ output_info.name }}</td>
+                </tr>
+                <tr>
+                    <th>Состояние выхода</th>
+                    <td>{{ output_info.value }}</td>
+                </tr>
+                <tr>
+                    <th>Последнее событие</th>
+                    <td>{{ output_info.last_ts }}</td>
+                </tr>
+                <tr>
+                    <th>Начало полива</th>
+                    <td>{{ output_info.start_ts }}</td>
+                </tr>
+                <tr>
+                    <th>Окончание полива</th>
+                    <td>{{ output_info.end_ts }}</td>
+                </tr>
+            </table>
+        {% endif %}
+
+        <button class="button-danger button-small" onclick="deleteSensor('{{ device_SN }}', '{{ sensor_info.uid }}')">Удалить датчик</button>
+        <button class="button-link button-small" onclick="changeOutput('{{ device_SN }}')">Изменить выход</button>
+        <button class="button-link button-small" onclick="controlIrrigation('{{ device_SN }}', '{{ sensor_info.uid }}', 'true')">Включить полив</button>
+        <button class="button-link button-small" onclick="controlIrrigation('{{ device_SN }}', '{{ sensor_info.uid }}', 'false')">Выключить полив</button>
+    </div>
+</body>
+</html>

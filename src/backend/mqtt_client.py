@@ -54,7 +54,7 @@ async def on_message(client, topic, payload, qos, properties):
     db = SessionLocal()
     try:
         state = json.loads(payload)
-        print('-->', state)
+        print(f'from topic {topic}', '-->', state)
 
         # достаем device_SN из топика сообщения
         device_SN = extract_device_id_from_topic(topic)

@@ -85,8 +85,6 @@ async def add_change_output(
         # Обновляем данные с новым списком outputs
         last_message['outputs'] = updated_outputs
 
-        # updated_state = last_message.copy()
-        # updated_state['outputs'].append(output)
         payload = json.dumps(last_message, ensure_ascii=False)
 
         device_type = device.device_type

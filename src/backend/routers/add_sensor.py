@@ -15,6 +15,7 @@ from sqlalchemy.exc import IntegrityError
 
 from src.backend.database.database import SessionLocal
 from src.backend.database.models import WirelessSensor, Device
+from src.backend.database.schemas import SensorData
 from src.backend.mqtt_client import fast_mqtt
 
 router = APIRouter()
@@ -26,11 +27,6 @@ async def serve_html(request: Request, device_SN: str):
     return templates.TemplateResponse("qr.html", {"request": request, "device_SN": device_SN})
 
 
-class SensorData(BaseModel):
-    qrCodeMessage: str
-    sensorName: str
-
-
 @router.post("/devices/{device_SN}/add_sensor")
 async def add_sensor(device_SN: str, data: SensorData, request: Request):
     db = SessionLocal()
@@ -38,7 +34,6 @@ async def add_sensor(device_SN: str, data: SensorData, request: Request):
         sensor_uid = data.qrCodeMessage
         sensor_name = data.sensorName
 
-        # логика
         print(f"Received QR code message: {sensor_uid}")
         print(f"Received device name: {sensor_name}")
 

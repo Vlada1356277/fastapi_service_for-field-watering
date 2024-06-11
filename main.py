@@ -8,7 +8,7 @@ from src.backend.database.database import engine, SessionLocal
 from src.backend.database.models import Device
 from src.backend.mqtt_client import fast_mqtt, subscribe_mqtt
 from src.backend.routers import (subscribe_device, add_sensor, device_data, delete_sensor, device_detail,
-                                 output, output_on_off)
+                                 output, output_on_off, delete_device, sensor_detail)
 from fastapi.staticfiles import StaticFiles
 
 models.Base.metadata.create_all(bind=engine)
@@ -58,6 +58,12 @@ app.include_router(output.router)
 
 # get("/devices/{device_SN}/{sensor_uid}/{value}") -- вкл выкл выхода, лучше post но для тестов в браузере get
 app.include_router(output_on_off.router)
+
+# delete("/delete_device") - удаление главного устройства
+app.include_router(delete_device.router)
+
+# get("/devices/{device_SN}/{sensor_id}") - информация о датчике и его выходе с html
+app.include_router(sensor_detail.router)
 
 # отрисовка html
 app.mount("/templates", StaticFiles(directory="templates"), name="templates")

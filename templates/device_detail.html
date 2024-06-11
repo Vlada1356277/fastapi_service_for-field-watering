@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Device Details</title>
+    <title>Подробности об устройстве</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -32,13 +32,24 @@
         th {
             background-color: #f4f4f4;
         }
+        .button-details, .button-add, .button-link {
+            padding: 5px 10px;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+        }
         .button-details {
             background-color: #008CBA;
             color: white;
-            padding: 10px 20px;
-            border: none;
-            cursor: pointer;
+        }
+        .button-add {
+            background-color: #4CAF50;
+            color: white;
             margin-top: 20px;
+        }
+        .button-link {
+            background-color: #008CBA;
+            color: white;
         }
     </style>
     <script>
@@ -47,13 +58,21 @@
             const deviceSN = pathParts[pathParts.length - 1];
             window.location.href = `/devices/${deviceSN}/output`;
         }
+
+        function redirectToSensor(deviceSN, sensorID) {
+            window.location.href = `/devices/${deviceSN}/${sensorID}`;
+        }
+
+        function addSensor(deviceSN) {
+            window.location.href = `/devices/${deviceSN}/add_sensor`;
+        }
     </script>
 </head>
 <body>
     <div class="container">
         <h1>Device: {{ device_SN }}</h1>
 
-        <h2>Sensors</h2>
+        <h2>Датчики</h2>
         <table>
             <tr>
                 <th>UID</th>
@@ -62,6 +81,7 @@
                 <th>Humidity</th>
                 <th>Battery Level</th>
                 <th>Последнее событие</th>
+                <th>Подробнее</th>
             </tr>
             {% for sensor in sensors %}
             <tr>
@@ -71,11 +91,16 @@
                 <td>{{ sensor.last_humidity }}</td>
                 <td>{{ sensor.last_battery_level }}</td>
                 <td>{{ sensor.last_ts }}</td>
+                <td>
+                    <button class="button-link" onclick="redirectToSensor('{{ device_SN }}', '{{ sensor.uid }}')">Details</button>
+                </td>
             </tr>
             {% endfor %}
         </table>
 
-        <h2>Outputs</h2>
+        <button class="button-add" onclick="addSensor('{{ device_SN }}')">Добавить датчик</button>
+
+        <h2>Выходы</h2>
         <table>
             <tr>
                 <th>Name</th>
@@ -90,7 +115,7 @@
                 <td>{{ output.value }}</td>
                 <td>{{ output.last_ts }}</td>
                 <td>{{ output.id }}</td>
-                <td>{{ output.sensor}}</td>
+                <td>{{ output.sensor }}</td>
             </tr>
             {% endfor %}
         </table>
@@ -99,3 +124,4 @@
     </div>
 </body>
 </html>
+

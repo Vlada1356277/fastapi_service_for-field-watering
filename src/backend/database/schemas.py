@@ -32,6 +32,10 @@ class DeviceState(BaseModel):
     rssi: str
     temperature: str
 
+class SensorData(BaseModel):
+    qrCodeMessage: str
+    sensorName: str
+
 
 class SensorsList(BaseModel):
     uid: str
