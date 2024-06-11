@@ -4,15 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2a490ce1-1ebb-4de6-a7df-771a322084db" name="Changes" comment="updated">
-      <change afterPath="$PROJECT_DIR$/.idea/fastapi_service.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/qr.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/qr.html" afterDir="false" />
+    <list default="true" id="2a490ce1-1ebb-4de6-a7df-771a322084db" name="Changes" comment="everything is working">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/backend/database/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/backend/database/database.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/backend/routers/output_on_off.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/backend/routers/output_on_off.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -233,7 +228,15 @@
       <option name="project" value="LOCAL" />
       <updated>1718110656366</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="everything is working">
+      <option name="closed" value="true" />
+      <created>1718117403327</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1718117403327</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -252,7 +255,8 @@
     <MESSAGE value="working without turning on/off output" />
     <MESSAGE value="working" />
     <MESSAGE value="updated" />
-    <option name="LAST_COMMIT_MESSAGE" value="updated" />
+    <MESSAGE value="everything is working" />
+    <option name="LAST_COMMIT_MESSAGE" value="everything is working" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

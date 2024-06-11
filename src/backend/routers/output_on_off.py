@@ -64,15 +64,3 @@ async def update_device_output(device_SN: str, sensor_uid: str, value: bool):
     finally:
         db.close()
 
-# from fastapi.responses import HTMLResponse
-# from fastapi.templating import Jinja2Templates
-#
-# templates = Jinja2Templates(directory="templates")
-#
-#
-# @router.get("/devices/{deviceSN}/{sensorUID}/turn_output", response_class=HTMLResponse)
-# async def read_item(request: Request, deviceSN: str, sensorUID: str):
-#     return templates.TemplateResponse("turn_output.html",
-#                                       {"request": request,
-#                                        "deviceSN": deviceSN,
-#                                        "sensorUID": sensorUID})
